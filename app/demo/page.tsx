@@ -7,7 +7,7 @@ import { Network, ArrowLeft, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UploadZone } from '@/components/demo/upload-zone'
 import { DocumentList } from '@/components/demo/document-list'
-import { KnowledgeGraph } from '@/components/demo/knowledge-graph'
+import { KnowledgeGraphWrapper } from '@/components/demo/knowledge-graph-wrapper'
 import { EntityPanel } from '@/components/demo/entity-panel'
 import { InsightsPanel } from '@/components/demo/insights-panel'
 import type { Entity, GraphData, Document, InsightStats } from '@/lib/types'
@@ -148,7 +148,7 @@ export default function DemoPage() {
 
         <main className="relative flex-1 bg-background">
           {graphData.nodes.length > 0 ? (
-            <KnowledgeGraph
+            <KnowledgeGraphWrapper
               data={graphData}
               onNodeClick={setSelectedEntity}
               selectedNodeId={selectedEntity?.id}
