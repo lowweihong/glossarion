@@ -1,7 +1,10 @@
-import { generateText, Output } from 'ai'
+import { generateObject } from 'ai'
+import { createGroq } from '@ai-sdk/groq'
 import * as z from 'zod'
 import type { Entity, Relationship, EntityType } from './types'
 import { generateMockExtraction } from './demo-data'
+
+const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
 
 const entitySchema = z.object({
   name: z.string().describe('The name of the entity'),
@@ -41,7 +44,7 @@ const extractionSchema = z.object({
 })
 
 export function isAIConfigured(): boolean {
-  return !!process.env.OPENAI_API_KEY
+  return !!process.env.GROQ_API_KEY
 }
 
 export async function extractKnowledge(
@@ -57,11 +60,9 @@ export async function extractKnowledge(
   }
 
   try {
-    const { output } = await generateText({
-      model: 'openai/gpt-4o-mini',
-      output: Output.object({
-        schema: extractionSchema,
-      }),
+    const { object: output } = await generateObject({
+      model: groq('llama-3.3-70b-versatile'),
+      schema: extractionSchema,
       messages: [
         {
           role: 'system',
@@ -77,14 +78,6 @@ Be thorough but only extract entities that are clearly mentioned. Assign appropr
         },
       ],
     })
-
-    if (!output) {
-      const mock = generateMockExtraction(content)
-      return {
-        entities: mock.entities.map((e) => ({ ...e, documentId })),
-        relationships: mock.relationships,
-      }
-    }
 
     const entityMap = new Map<string, string>()
     const entities: Entity[] = output.entities.map((e, idx) => {
