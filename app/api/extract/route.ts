@@ -65,8 +65,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       documentId,
-      entities: uniqueEntities.length,
-      relationships: allRelationships.length,
+      entities: uniqueEntities,
+      relationships: allRelationships,
       usingAI: isAIConfigured(),
       usingNeo4j: isNeo4jConfigured(),
     })

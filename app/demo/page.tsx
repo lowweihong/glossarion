@@ -18,6 +18,7 @@ export default function DemoPage() {
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [localDocuments, setLocalDocuments] = useState<Document[]>([])
+  const [localGraphData, setLocalGraphData] = useState<GraphData>({ nodes: [], links: [] })
 
   const { data: graphResponse } = useSWR<GraphData & { usingDemo: boolean }>(
     '/api/graph',
@@ -37,7 +38,8 @@ export default function DemoPage() {
     { refreshInterval: 5000 }
   )
 
-  const graphData: GraphData = graphResponse || { nodes: [], links: [] }
+  const serverGraphData: GraphData = graphResponse || { nodes: [], links: [] }
+  const graphData: GraphData = localGraphData.nodes.length > 0 ? localGraphData : serverGraphData
   const documents = [...(docsResponse?.documents || []), ...localDocuments]
   const insights = insightsResponse?.insights
   const usingDemo = graphResponse?.usingDemo ?? true
@@ -72,11 +74,28 @@ export default function DemoPage() {
         })
 
         if (response.ok) {
+          const result = await response.json()
           setLocalDocuments((prev) =>
             prev.map((d) =>
               d.id === newDoc.id ? { ...d, status: 'completed' } : d
             )
           )
+          if (result.entities?.length > 0) {
+            setLocalGraphData((prev) => ({
+              nodes: [
+                ...prev.nodes,
+                ...result.entities.filter(
+                  (e: Entity) => !prev.nodes.find((n) => n.id === e.id)
+                ),
+              ],
+              links: [
+                ...prev.links,
+                ...result.relationships.filter(
+                  (r: { id: string }) => !prev.links.find((l) => l.id === r.id)
+                ),
+              ],
+            }))
+          }
           mutate('/api/graph')
           mutate('/api/graph?type=insights')
         } else {
