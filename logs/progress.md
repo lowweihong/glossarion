@@ -73,3 +73,10 @@ Since the core implementation is done, the April 12 run should focus on:
 *Next scheduled run: Saturday April 12, 2026 9pm PT*
 
 ---
+
+### Agent Notes
+
+- **Push status:** Commit `d754594` created locally but **push failed** — the sandbox environment does not have access to `~/.ssh/config` containing the `github-lowweihong` host alias. Please run `git push origin main` manually from the project directory to sync to GitHub.
+- **Filesystem:** virtiofs FUSE mount causes git lock files to persist (cannot unlink), but git operations complete successfully with workaround (rename instead of delete).
+
+---
