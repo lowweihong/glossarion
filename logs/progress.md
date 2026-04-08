@@ -80,3 +80,75 @@ Since the core implementation is done, the April 12 run should focus on:
 - **Filesystem:** virtiofs FUSE mount causes git lock files to persist (cannot unlink), but git operations complete successfully with workaround (rename instead of delete).
 
 ---
+
+## Run: April 7, 2026 — Week 1 TypeScript Fix Pass
+
+**Agent run date:** Tuesday, April 7, 2026 (mid-week pre-Week 1 run)
+**Scheduled week:** Week 1 (official build date: Saturday April 12)
+**Status:** ✅ PARTIAL — TypeScript errors resolved; full production build blocked by environment constraint
+
+---
+
+### What Was Done
+
+Executed the "Run `npm run build` and fix TypeScript/build errors" task from the Week 1 checklist ahead of the April 12 scheduled run.
+
+**TypeScript audit (`tsc --noEmit`):** Found and fixed **6 errors** across 3 files. Result: ✅ clean, 0 errors.
+
+#### Fixes Applied
+
+| File | Error | Fix |
+|---|---|---|
+| `components/demo/knowledge-graph.tsx` | `GraphLink extends Relationship` — `source: string \| GraphNode` incompatible with `source: string` | Changed to `GraphLink extends Omit<Relationship, 'source' \| 'target'>` |
+| `components/demo/knowledge-graph.tsx` | `useRef<ForceGraphMethods<...>>()` — React 19 requires initial value | Changed to `useRef<ForceGraphMethods<...>>(null!)` |
+| `lib/extractor.ts` | `.filter((r): r is Relationship => r !== null)` — type predicate clash: `description?` vs `description: string \| undefined` | Changed to `.filter(Boolean) as Relationship[]` |
+| `lib/neo4j.ts` (×3) | `doc`, `entity`, `rel` not assignable to `Record<string, unknown>` (no index signature) | Cast each to `unknown as Record<string, unknown>` before passing to `runQuery()` |
+
+#### SWR Imports
+
+The PLAN.md item "Remove unused SWR imports from demo page" was already done — `app/demo/page.tsx` contains no SWR imports. The rewrite to SSE-based streaming completely replaced the SWR polling approach. Item confirmed ✅.
+
+---
+
+### Build Attempt
+
+`next build --webpack` was attempted. Blocked by **cross-architecture native binary mismatch**:
+
+- `node_modules` installed on macOS (darwin/arm64 Mach-O binaries)
+- Build agent runs on Linux ARM64
+- Missing: `lightningcss.linux-arm64-gnu.node`, `@next/swc-linux-arm64-gnu`
+
+**This is not a code issue.** The build will work correctly when run on the macOS machine where dependencies were installed. To fully verify: run `pnpm build` locally on macOS.
+
+**Resolution:** `next.config.mjs` remains unchanged (reverted a temporary `distDir` test).
+
+---
+
+### Week 1 Checklist Status (ahead of April 12)
+
+| Task | Status | Notes |
+|---|---|---|
+| Run build + fix TypeScript errors | ✅ Done | 6 errors fixed, `tsc --noEmit` clean |
+| Remove unused SWR imports | ✅ Already done | No SWR imports found in demo page |
+| Fix `InsightStats` type (`entitiesByType`) | ✅ Non-issue | `Record<EntityType, number>` where `EntityType = string` is valid; no error |
+| Test end-to-end with real PDF | ⏳ Pending | Requires running locally on macOS |
+| Test ontology generation | ⏳ Pending | Requires `GROQ_API_KEY` and browser |
+| Verify node pulse animation in browser | ⏳ Pending | Requires local run |
+
+---
+
+### Codebase Health
+
+- **TypeScript:** `tsc --noEmit` exits 0 — fully clean ✅
+- **Build (local macOS):** Expected to succeed after `pnpm install`
+- **No new dependencies added**
+- **Files changed:** `components/demo/knowledge-graph.tsx`, `lib/extractor.ts`, `lib/neo4j.ts`
+
+---
+
+### Agent Notes
+
+- **Push status:** SSH `github-lowweihong` host alias unavailable in sandbox. Please run `git push git@github-lowweihong:lowweihong/glossarion.git main` manually from the project directory.
+- **Recommendation for April 12 run:** Focus on end-to-end testing (upload real PDF, verify live graph growth, pulse animation). All code-level issues are now resolved.
+
+---

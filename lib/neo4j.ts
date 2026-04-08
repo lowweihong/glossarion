@@ -75,7 +75,7 @@ export async function createDocument(doc: Document): Promise<Document> {
     })
     RETURN d
   `,
-    doc
+    doc as unknown as Record<string, unknown>
   )
   return doc
 }
@@ -113,7 +113,7 @@ export async function createEntity(entity: Entity): Promise<Entity> {
     MERGE (e)-[:EXTRACTED_FROM]->(d)
     RETURN e
   `,
-    entity
+    entity as unknown as Record<string, unknown>
   )
   return entity
 }
@@ -133,7 +133,7 @@ export async function createRelationship(rel: Relationship): Promise<Relationshi
         r.confidence = $confidence
     RETURN r
   `,
-    rel
+    rel as unknown as Record<string, unknown>
   )
   return rel
 }
