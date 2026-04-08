@@ -1,35 +1,101 @@
-# v0-graph-rag-page
+# Glossarion
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+> Upload any document. Watch the knowledge graph grow.
 
-## Built with v0
+Glossarion is a document-first deep research agent with real-time visual knowledge graph exploration. Upload a PDF, and watch as the AI extracts entities, generates a domain-specific ontology, and builds a living knowledge graph — node by node, in real time.
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+**Live demo:** [your-vercel-url.vercel.app](https://your-vercel-url.vercel.app)
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_YoS7zGGQsEsxqKnhcRW0u3SoJZfB)
+---
+
+## What It Does
+
+```
+Upload PDF → Generate Ontology → Stream Entities Live → Expand via Web Search → Explore Visually
+```
+
+1. **Upload** — drop in a PDF, text file, or markdown document
+2. **Ontology generation** — LLM analyzes the document and generates domain-specific entity and relation types (e.g. for a legal doc: `COURT`, `PLAINTIFF`, `STATUTE` — not generic `PERSON`, `ORG`)
+3. **Live extraction** — entities and relationships stream in one by one via SSE; the graph grows in real time with a pulse animation on each new node
+4. **Web expansion** *(coming Week 2)* — click any node to search the web for related entities; the graph expands outward automatically
+5. **Save & share** *(coming Week 3)* — graphs are saved to your account and shareable via a public URL
+
+---
+
+## What It Looks Like
+
+### Landing Page
+Animated knowledge graph background with a clean dark-mode UI.
+
+### Demo Page
+Split layout: sidebar with pipeline status + live log feed on the left, full-screen interactive graph on the right.
+
+**Pipeline sidebar:**
+- Step-by-step pipeline: Parse → Ontology → Extract → Expand
+- Live counters: `32 nodes · 45 edges`
+- Ontology tags with domain-specific entity types
+- Timestamped live log: `20:53:43 + Harvard University (UNIVERSITY)`
+
+**Graph canvas:**
+- Force-directed graph with color-coded entity types
+- New nodes pulse with a glow animation when they appear
+- Click any node to see its details and connections
+- Zoom, pan, fit-to-view controls
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 14 (App Router) |
+| Graph viz | react-force-graph-2d |
+| LLM | Groq (llama-3.3-70b-versatile) |
+| Streaming | Server-Sent Events (SSE) |
+| PDF parsing | pdf-parse |
+| Web search | Tavily API *(Week 2)* |
+| Auth | Clerk *(Week 3)* |
+| Database | Supabase *(Week 3)* |
+| Deploy | Vercel |
+
+---
+
+## 4-Week Build Plan
+
+| Week | Date | Theme | Status |
+|---|---|---|---|
+| 1 | Apr 12 | Streaming pipeline + live graph | 🔨 In progress |
+| 2 | Apr 19 | Web search expansion agent | ⏳ Scheduled |
+| 3 | Apr 26 | Auth + persistence + sharing | ⏳ Scheduled |
+| 4 | May 3 | Graph polish + advanced features | ⏳ Scheduled |
+
+Built with weekly scheduled Claude Code agents — see [`PLAN.md`](./PLAN.md) for the full plan and [`logs/`](./logs/) for weekly agent output.
+
+---
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Install dependencies
+pnpm install
+
+# Add your API key
+echo "GROQ_API_KEY=your_key_here" > .env.local
+
+# Run locally
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000/demo](http://localhost:3000/demo) and upload any PDF.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Get a free Groq API key at [console.groq.com](https://console.groq.com).
 
-## Learn More
+---
 
-To learn more, take a look at the following resources:
+## Market Context
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+The "deep research agent" space is growing fast (ChatGPT Deep Research, Gemini Deep Research, Perplexity). None of them offer a **visual knowledge graph** as the primary interface. Glossarion's differentiator: the graph is the product, not a side feature.
 
-<a href="https://v0.app/chat/api/kiro/clone/lowweihong/v0-graph-rag-page" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+Target users: researchers, law firms (SMB), business analysts, students.
+
+See [`market_research.md`](./market_research.md) for the full analysis.
