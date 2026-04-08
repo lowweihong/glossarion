@@ -27,7 +27,7 @@ interface GraphNode extends Entity {
   vy?: number
 }
 
-interface GraphLink extends Relationship {
+interface GraphLink extends Omit<Relationship, 'source' | 'target'> {
   source: string | GraphNode
   target: string | GraphNode
 }
@@ -38,7 +38,7 @@ export function KnowledgeGraph({
   selectedNodeId,
   newNodeIds = new Set(),
 }: KnowledgeGraphProps) {
-  const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>()
+  const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>(null!)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null)

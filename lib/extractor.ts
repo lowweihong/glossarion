@@ -129,7 +129,7 @@ Only extract entities clearly mentioned. Be thorough.`,
           confidence: r.confidence,
         }
       })
-      .filter((r): r is Relationship => r !== null)
+      .filter(Boolean) as Relationship[]
 
     return { entities, relationships }
   } catch (error) {
