@@ -11,12 +11,13 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { GraphData, Entity, Relationship } from '@/lib/types'
-import { ENTITY_COLORS, ENTITY_LABELS } from '@/lib/types'
+import { ENTITY_COLORS, ENTITY_LABELS, getEntityColor } from '@/lib/types'
 
 interface KnowledgeGraphProps {
   data: GraphData
   onNodeClick?: (node: Entity) => void
   selectedNodeId?: string | null
+  newNodeIds?: Set<string>
 }
 
 interface GraphNode extends Entity {
@@ -35,6 +36,7 @@ export function KnowledgeGraph({
   data,
   onNodeClick,
   selectedNodeId,
+  newNodeIds = new Set(),
 }: KnowledgeGraphProps) {
   const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -96,10 +98,24 @@ export function KnowledgeGraph({
       const nodeRadius = 8
       const isSelected = selectedNodeId === node.id
       const isHovered = hoveredNode?.id === node.id
+      const isNew = newNodeIds.has(node.id)
+      const color = getEntityColor(node.type)
+
+      // Pulse ring for new nodes
+      if (isNew) {
+        const pulse = (Math.sin(Date.now() / 200) + 1) / 2
+        ctx.beginPath()
+        ctx.arc(node.x!, node.y!, nodeRadius + 4 + pulse * 6, 0, 2 * Math.PI)
+        ctx.strokeStyle = color
+        ctx.lineWidth = 1.5 / globalScale
+        ctx.globalAlpha = 0.4 * (1 - pulse * 0.5)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+      }
 
       ctx.beginPath()
       ctx.arc(node.x!, node.y!, nodeRadius, 0, 2 * Math.PI)
-      ctx.fillStyle = ENTITY_COLORS[node.type] || '#888888'
+      ctx.fillStyle = color
       ctx.fill()
 
       if (isSelected || isHovered) {
@@ -109,7 +125,7 @@ export function KnowledgeGraph({
 
         ctx.beginPath()
         ctx.arc(node.x!, node.y!, nodeRadius + 4, 0, 2 * Math.PI)
-        ctx.strokeStyle = ENTITY_COLORS[node.type] || '#888888'
+        ctx.strokeStyle = color
         ctx.lineWidth = 2 / globalScale
         ctx.globalAlpha = 0.5
         ctx.stroke()

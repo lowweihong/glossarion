@@ -1,107 +1,104 @@
 # Glossarion — 1-Month Build Plan
-*Created: April 2026 | Updated: —*
+*Created: April 2026 | Updated: April 7, 2026*
 
 ---
 
 ## Goal
-Build a working product: a document-first deep research agent with visual knowledge graph exploration. Upload a PDF → extract entities → auto-expand via web search → explore visually. Focus is on getting the core product solid, not launching.
+Build a working product: a document-first deep research agent with visual knowledge graph exploration. Upload a PDF → generate domain ontology → stream entity extraction live → auto-expand via web search → explore visually. Focus is on getting the core product solid, not launching.
+
+## Inspiration
+MiroFish (666ghj.github.io/mirofish-demo) — the "expansion factor": watch the graph grow in real-time as entities are discovered. This feeling is the core product moment.
 
 ## Schedule
-Every **Saturday 9pm PT** (= Sunday 4am UTC). Each week has a scheduled remote Claude agent that prepares a build brief, does research, and logs progress.
+Every **Saturday 9pm PT** (= Sunday 4am UTC). Scheduled agent runs weekly via Claude Cowork.
 
 ---
 
 ## Week 1 — Saturday April 12, 2026
-**Theme: Wire Up the Real Backend**
+**Theme: Streaming Pipeline + Live Graph**
 
-### What's Already Built
-- Landing page (full UI, static)
-- Demo UI: upload zone, ForceGraph2D knowledge graph, entity panel, insights panel
-- Type system: Entity, Relationship, Document, GraphData
-- API route stubs: `/api/extract`, `/api/graph`
-- Lib files: `extractor.ts`, `parser.ts`, `neo4j.ts`, `demo-data.ts`
+### What's Already Built (as of Apr 7)
+- Landing page (full UI)
+- Upload zone (PDF/TXT/MD)
+- ForceGraph2D knowledge graph visualization
+- `lib/parser.ts` — PDF parsing with pdf-parse ✓
+- `lib/extractor.ts` — Groq llama-3.3-70b-versatile for extraction ✓
+- `lib/types.ts` — dynamic entity types, `getEntityColor()` for any type ✓
+- `app/api/extract/route.ts` — SSE streaming pipeline ✓
+- `components/demo/pipeline-status.tsx` — step-by-step pipeline UI ✓
+- `components/demo/expansion-log.tsx` — live log feed ✓
+- `app/demo/page.tsx` — SSE stream reader, live graph state ✓
+- Node pulse animation for new nodes ✓
 
-### What to Build This Week
-- [ ] `lib/parser.ts` — real PDF text extraction using `pdf-parse` or `pdfjs-dist`
-- [ ] `lib/extractor.ts` — call Claude API (claude-sonnet-4-6) to extract entities + relationships from text
-- [ ] `app/api/extract/route.ts` — receive uploaded file, parse → extract → return GraphData
-- [ ] `app/api/graph/route.ts` — serve stored graph data
-- [ ] Wire demo UI to real API (replace mock `demo-data.ts` calls)
-- [ ] Add loading states and error handling in demo page
+### What Still Needs Doing This Week
+- [ ] Run `npm run build` and fix any TypeScript/build errors
+- [ ] Test end-to-end: upload a real PDF → confirm graph grows live
+- [ ] Fix the `InsightStats` type — `entitiesByType` uses `Record<EntityType, number>` which breaks now that EntityType = string (need to handle dynamic types)
+- [ ] Remove unused SWR imports from demo page (no longer polling /api/graph)
+- [ ] Test ontology generation: confirm domain-specific entity types appear
+- [ ] Verify node pulse animation works in browser
 
 ### Definition of Done
-Upload a real PDF → see a real knowledge graph with real entities extracted by Claude.
-
-### Agent Task (runs Sat Apr 12 9pm PT)
-Research + prepare: best PDF parsing library for Next.js, Claude API entity extraction prompt patterns, example entity/relationship JSON schemas.
+Upload a PDF → see pipeline steps tick off → graph nodes appear live one by one with pulse animation → ontology tags shown in sidebar.
 
 ---
 
 ## Week 2 — Saturday April 19, 2026
 **Theme: Web Search Expansion Agent**
 
-### What to Build This Week
-- [ ] Integrate Tavily API (or Perplexity API) for web search
-- [ ] `lib/expander.ts` — for each entity in the graph, search the web and extract new related entities/relationships
-- [ ] `app/api/expand/route.ts` — endpoint to trigger web expansion for a given graph
+### What to Build
+- [ ] Integrate Tavily API for web search
+- [ ] `lib/expander.ts` — for each entity, search the web and find new related entities/relationships
+- [ ] `app/api/expand/route.ts` — SSE stream expansion results (same pattern as extract)
 - [ ] Add "Expand with Web" button in demo UI
-- [ ] Show visual distinction: document nodes vs web-sourced nodes (different color/border)
-- [ ] Add expansion progress indicator ("Searching web for: [entity name]...")
-- [ ] Stream expansion results to UI as they come in
+- [ ] Ripple effect: when a node expands, new nodes radiate outward from it visually
+- [ ] Source badge: distinguish document nodes vs web-sourced nodes (different border style)
+- [ ] Add expansion to pipeline steps: Step 4 "Web Expansion"
+- [ ] Expansion log shows: "Searching web for: [entity]..." → "+ 3 new entities found"
 
 ### Definition of Done
-Click "Expand" → graph grows in real-time as the agent searches the web for each entity.
-
-### Agent Task (runs Sat Apr 19 9pm PT)
-Research + prepare: Tavily vs Perplexity for entity-centric search, prompt patterns for extracting new graph nodes from search results, streaming UI patterns in Next.js.
+Click "Expand" on a node → graph grows outward in real-time with web-sourced entities.
 
 ---
 
 ## Week 3 — Saturday April 26, 2026
 **Theme: Auth + Persistence + Sharing**
 
-### What to Build This Week
-- [ ] Add Clerk authentication (sign up / log in)
-- [ ] Set up Supabase (or Neon) database — tables: users, documents, graphs
-- [ ] Save graphs to DB after extraction + expansion
-- [ ] User dashboard: list of past graphs
-- [ ] Shareable graph URLs (`/graph/[id]`) — public or private
-- [ ] Deploy to Vercel (staging environment)
+### What to Build
+- [ ] Clerk authentication (sign up / log in)
+- [ ] Supabase DB — tables: users, graphs (store nodes + edges as JSON)
+- [ ] Save graph after extraction + expansion
+- [ ] `/dashboard` — list of user's past graphs
+- [ ] `/graph/[id]` — shareable public read-only graph URL
+- [ ] Deploy to Vercel (staging)
 
 ### Definition of Done
-Log in → upload a PDF → graph is saved → share a link → someone else can view the graph.
-
-### Agent Task (runs Sat Apr 26 9pm PT)
-Research + prepare: Clerk + Next.js setup guide, Supabase schema for graphs, Vercel deployment checklist for this stack.
+Log in → upload PDF → graph saved → share link → someone else views it.
 
 ---
 
 ## Week 4 — Saturday May 3, 2026
 **Theme: Graph Polish + Advanced Features**
 
-### What to Build This Week
-- [ ] Filter graph by entity type (toggle PERSON / ORG / CONCEPT etc.)
-- [ ] Search/highlight nodes by name within the graph
-- [ ] Multi-document support: upload multiple PDFs, merge into one graph, color-code by source document
+### What to Build
+- [ ] Filter graph by entity type (toggle buttons per type)
+- [ ] Search/highlight nodes by name
+- [ ] Multi-document support: upload multiple PDFs, merge graphs, color-code by source doc
 - [ ] Export graph as JSON or PNG
-- [ ] Improve insights panel: show most connected nodes, cluster summary, key themes
-- [ ] Mobile responsiveness: make the demo page usable on tablet/phone
-- [ ] End-to-end test with 5 different real PDFs (legal brief, research paper, news article, business report, book chapter) — fix any edge cases
+- [ ] Improve insights panel: top 5 most connected, key themes, auto-generated summary
+- [ ] Mobile responsiveness
+- [ ] End-to-end test with 5 diverse PDF types (legal, academic, news, business, book)
 
 ### Definition of Done
-The full flow works reliably end-to-end: upload → extract → expand via web → filter/search graph → export. Works on multiple document types.
-
-### Agent Task (runs Sat May 3 9pm PT)
-Implement the above features. Test with diverse PDF types and log any issues in `logs/week4-output.md`.
+Full flow works reliably. Multiple doc types. Graph is filterable, searchable, exportable.
 
 ---
 
 ## Progress Log
-*Agents append their output here after each Saturday run.*
 
 | Date | Week | Status | Notes |
 |---|---|---|---|
-| Apr 12 | Week 1 | Scheduled | — |
+| Apr 7 | Week 1 | In Progress | SSE streaming pipeline built, needs build check + testing |
 | Apr 19 | Week 2 | Scheduled | — |
 | Apr 26 | Week 3 | Scheduled | — |
 | May 3 | Week 4 | Scheduled | — |
@@ -110,14 +107,23 @@ Implement the above features. Test with diverse PDF types and log any issues in 
 
 ## Tech Stack
 - **Framework:** Next.js 14 (App Router)
-- **Graph viz:** react-force-graph-2d (already installed)
-- **PDF parsing:** pdf-parse or pdfjs-dist
-- **LLM:** Claude API (claude-sonnet-4-6) for entity extraction
-- **Web search:** Tavily API
-- **Auth:** Clerk
-- **DB:** Supabase
-- **Deploy:** Vercel (when ready)
+- **Graph viz:** react-force-graph-2d
+- **PDF parsing:** pdf-parse
+- **LLM:** Groq (llama-3.3-70b-versatile) for ontology + extraction
+- **Web search:** Tavily API (Week 2)
+- **Auth:** Clerk (Week 3)
+- **DB:** Supabase (Week 3)
+- **Deploy:** Vercel
 
 ---
 
-*Scheduled agents log: see `/logs/` directory after first run.*
+## Key Architecture
+```
+Upload → Parse (pdf-parse)
+       → Generate Ontology (Groq) — domain-specific entity/relation types
+       → Extract Entities (Groq, streaming SSE) — graph grows live
+       → Web Expand (Tavily, streaming SSE) — graph grows outward
+       → Save (Supabase) → Share (/graph/[id])
+```
+
+*Agent logs: see `logs/` directory in repo after each Saturday run.*

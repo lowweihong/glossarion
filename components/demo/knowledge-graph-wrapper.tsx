@@ -20,6 +20,7 @@ interface KnowledgeGraphWrapperProps {
   data: GraphData
   onNodeClick?: (node: Entity) => void
   selectedNodeId?: string | null
+  newNodeIds?: Set<string>
 }
 
 export function KnowledgeGraphWrapper(props: KnowledgeGraphWrapperProps) {
