@@ -4,7 +4,7 @@
 
 Glossarion is a document-first deep research agent with real-time visual knowledge graph exploration. Upload a PDF, and watch as the AI extracts entities, generates a domain-specific ontology, and builds a living knowledge graph — node by node, in real time.
 
-**Live demo:** [your-vercel-url.vercel.app](https://your-vercel-url.vercel.app)
+**Live demo:** [glossariograph.xyz](https://glossariograph.xyz)
 
 ---
 
