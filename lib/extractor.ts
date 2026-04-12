@@ -1,13 +1,16 @@
 import { generateObject } from 'ai'
-import { createGroq } from '@ai-sdk/groq'
+import { createOpenAI } from '@ai-sdk/openai'
 import * as z from 'zod'
 import type { Entity, Relationship, Ontology } from './types'
 import { generateMockExtraction } from './demo-data'
 
-const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
+const client = createOpenAI({
+  apiKey: process.env.AI_API_KEY,
+  baseURL: process.env.AI_BASE_URL,
+})
 
 export function isAIConfigured(): boolean {
-  return !!process.env.GROQ_API_KEY
+  return !!process.env.AI_API_KEY
 }
 
 export async function generateOntology(content: string): Promise<Ontology> {
@@ -27,7 +30,7 @@ export async function generateOntology(content: string): Promise<Ontology> {
 
   try {
     const { object } = await generateObject({
-      model: groq('llama-3.3-70b-versatile'),
+      model: client(process.env.AI_MODEL ?? 'claude-3-5-sonnet-20241022'),
       schema: ontologySchema,
       messages: [
         {
@@ -85,7 +88,7 @@ export async function extractKnowledge(
 
   try {
     const { object: output } = await generateObject({
-      model: groq('llama-3.3-70b-versatile'),
+      model: client(process.env.AI_MODEL ?? 'claude-3-5-sonnet-20241022'),
       schema: extractionSchema,
       messages: [
         {
