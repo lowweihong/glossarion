@@ -152,3 +152,74 @@ The PLAN.md item "Remove unused SWR imports from demo page" was already done —
 - **Recommendation for April 12 run:** Focus on end-to-end testing (upload real PDF, verify live graph growth, pulse animation). All code-level issues are now resolved.
 
 ---
+
+---
+
+## Run: April 12, 2026 — Week 1 Official Build Run
+
+**Agent run date:** Saturday April 11, 2026 9pm PT (= Sunday April 12, 2026 4am UTC)
+**Scheduled week:** Week 1 (official build date: Saturday April 12)
+**Status:** ✅ COMPLETE — All code-level Week 1 tasks done; browser-only tasks noted
+
+---
+
+### Summary
+
+This is the official Week 1 scheduled build run. The April 7 mid-week pass already resolved all TypeScript errors and confirmed code-level items. This run validates the clean state and delivers the one outstanding recommendation from the April 5 audit: `.env.example`.
+
+---
+
+### Week 1 Checklist — Final Status
+
+| Task | Status | Notes |
+|---|---|---|
+| Run `npm run build` + fix TypeScript errors | ✅ Done | `tsc --noEmit` exits 0 (clean); native binary mismatch blocks Linux build but this is an env issue, not a code issue |
+| Remove unused SWR imports from demo page | ✅ Done | No SWR imports exist in any source file |
+| Fix `InsightStats` type (`entitiesByType`) | ✅ Non-issue | `Record<EntityType, number>` = `Record<string, number>` — valid TypeScript, no error |
+| Test end-to-end: upload real PDF | ⏳ Skipped | Requires macOS + browser + `GROQ_API_KEY` — run manually |
+| Test ontology generation | ⏳ Skipped | Requires macOS + browser + `GROQ_API_KEY` — run manually |
+| Verify node pulse animation in browser | ⏳ Skipped | Requires macOS + browser — run manually |
+
+---
+
+### What Was Done This Run
+
+- **TypeScript check:** `tsc --noEmit` — ✅ 0 errors (confirmed clean, no regressions since Apr 7)
+- **SWR audit:** No SWR imports in `app/`, `components/`, or `lib/` — ✅ confirmed clean
+- **Created `.env.example`** — documents all required and upcoming env vars: `GROQ_API_KEY`, `NEO4J_*`, plus stub entries for Week 2 (`TAVILY_API_KEY`) and Week 3 (`CLERK_*`, `SUPABASE_*`)
+
+---
+
+### Codebase Health
+
+- **TypeScript:** `tsc --noEmit` exits 0 ✅
+- **Git:** Branch `main`, up to date with `origin/main` before this commit
+- **New files:** `.env.example`
+- **No source code changes** — codebase is stable
+
+---
+
+### Action Required (Manual)
+
+Before Week 2 (April 19), please run locally on macOS:
+1. `pnpm dev` → upload a real PDF → confirm graph nodes appear live with pulse animation
+2. Confirm ontology sidebar shows domain-specific entity types
+3. Optionally: bump chunk limit from 3 → 5 in `app/api/extract/route.ts` for longer PDFs
+
+---
+
+### Week 2 Preview (April 19)
+
+Next run will implement the **Web Search Expansion Agent**:
+- `lib/expander.ts` — Tavily API integration, search per entity
+- `app/api/expand/route.ts` — SSE stream of expansion results
+- "Expand with Web" button in demo UI
+- Visual ripple effect for web-sourced nodes
+- Source badge: document nodes vs web nodes
+
+Get a Tavily API key at https://tavily.com and add it to `.env.local` as `TAVILY_API_KEY` before next Saturday.
+
+---
+
+*Next scheduled run: Saturday April 19, 2026 9pm PT*
+
