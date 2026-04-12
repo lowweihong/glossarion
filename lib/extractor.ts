@@ -30,7 +30,7 @@ export async function generateOntology(content: string): Promise<Ontology> {
 
   try {
     const { object } = await generateObject({
-      model: client(process.env.AI_MODEL ?? 'claude-3-5-sonnet-20241022'),
+      model: client(process.env.AI_MODEL ?? 'claude-sonnet-4-6'),
       schema: ontologySchema,
       messages: [
         {
@@ -88,7 +88,7 @@ export async function extractKnowledge(
 
   try {
     const { object: output } = await generateObject({
-      model: client(process.env.AI_MODEL ?? 'claude-3-5-sonnet-20241022'),
+      model: client(process.env.AI_MODEL ?? 'claude-sonnet-4-6'),
       schema: extractionSchema,
       messages: [
         {

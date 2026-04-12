@@ -109,19 +109,26 @@ Full flow works reliably. Multiple doc types. Graph is filterable, searchable, e
 - **Framework:** Next.js 14 (App Router)
 - **Graph viz:** react-force-graph-2d
 - **PDF parsing:** pdf-parse
-- **LLM:** Groq (llama-3.3-70b-versatile) for ontology + extraction
+- **LLM:** Claude 3.5 Sonnet via aiprime.store (OpenAI-compatible proxy)
 - **Web search:** Tavily API (Week 2)
 - **Auth:** Clerk (Week 3)
 - **DB:** Supabase (Week 3)
 - **Deploy:** Vercel
+
+## Environment Variables
+| Variable | Value |
+|---|---|
+| `AI_API_KEY` | API key from aiprime.store |
+| `AI_BASE_URL` | `https://aiprime.store` |
+| `AI_MODEL` | `claude-3-5-sonnet-20241022` |
 
 ---
 
 ## Key Architecture
 ```
 Upload → Parse (pdf-parse)
-       → Generate Ontology (Groq) — domain-specific entity/relation types
-       → Extract Entities (Groq, streaming SSE) — graph grows live
+       → Generate Ontology (Claude 3.5 Sonnet) — domain-specific entity/relation types
+       → Extract Entities (Claude 3.5 Sonnet, streaming SSE) — graph grows live
        → Web Expand (Tavily, streaming SSE) — graph grows outward
        → Save (Supabase) → Share (/graph/[id])
 ```
