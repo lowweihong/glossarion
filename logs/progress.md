@@ -223,3 +223,55 @@ Get a Tavily API key at https://tavily.com and add it to `.env.local` as `TAVILY
 
 *Next scheduled run: Saturday April 19, 2026 9pm PT*
 
+---
+
+## Run: April 12, 2026 — Week 1 Supplemental Check (4am UTC automated run)
+
+**Agent run date:** Sunday April 12, 2026 (scheduled Saturday Apr 12 9pm PT = Sun Apr 12 4am UTC)
+**Scheduled week:** Week 1
+**Status:** ✅ CONFIRMED COMPLETE — codebase clean, all Week 1 code tasks done
+
+---
+
+### Summary
+
+This automated scheduled run confirmed the state after Chloe's manual updates earlier today. Two additional commits were present since the earlier April 12 log entry:
+
+- `aa1f561` — **Switch LLM to Claude claude-sonnet-4-6 via aiprime.store** (OpenAI-compatible proxy): `lib/extractor.ts` now uses `createOpenAI` from `@ai-sdk/openai` pointed at `AI_BASE_URL`. Default model updated from `claude-3-5-sonnet-20241022` → `claude-sonnet-4-6`. PLAN.md updated to reflect this change.
+- `b1ed97c` — `.gitignore` updated to exclude `tmp/`, `tsconfig.tsbuildinfo`, `package-lock.json`.
+
+---
+
+### Checks Performed
+
+| Check | Result |
+|---|---|
+| `tsc --noEmit` | ✅ 0 errors |
+| SWR imports in source | ✅ None found |
+| `InsightStats` type | ✅ `Record<EntityType, number>` = `Record<string, number>` — valid |
+| Git working tree | ✅ Clean, up to date with `origin/main` |
+| LLM stack | ✅ Now Claude claude-sonnet-4-6 via aiprime.store OpenAI-compatible proxy |
+
+---
+
+### Persistent Constraint
+
+SSH push via `github-lowweihong` host alias is unavailable in the sandbox environment. Push attempted; falls back to noting manual push required if git push fails.
+
+---
+
+### Week 1 Final Status
+
+All code-level Week 1 tasks are complete. Browser-only validation (live e2e test, pulse animation, ontology sidebar) requires running `pnpm dev` locally on macOS with a valid `AI_API_KEY`.
+
+---
+
+### Week 2 Reminder (April 19)
+
+- Get a Tavily API key at https://tavily.com → add to `.env.local` as `TAVILY_API_KEY`
+- Week 2 builds: `lib/expander.ts`, `app/api/expand/route.ts`, "Expand with Web" UI button, ripple effect, source badge
+
+---
+
+*Next scheduled run: Saturday April 19, 2026 9pm PT*
+
