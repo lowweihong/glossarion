@@ -254,9 +254,11 @@ This automated scheduled run confirmed the state after Chloe's manual updates ea
 
 ---
 
-### Persistent Constraint
+### Push Status
 
-SSH push via `github-lowweihong` host alias is unavailable in the sandbox environment. Push attempted; falls back to noting manual push required if git push fails.
+**Push failed** — SSH `github-lowweihong` host alias is not resolvable in the sandbox. HTTPS push also unavailable (no credentials). Commit `f14ae80` is local only.
+
+**Action required:** Run `git push origin main` manually from the project directory to sync to GitHub.
 
 ---
 
