@@ -277,3 +277,82 @@ All code-level Week 1 tasks are complete. Browser-only validation (live e2e test
 
 *Next scheduled run: Saturday April 19, 2026 9pm PT*
 
+---
+
+## Run: April 18, 2026 — Week 2 Build: Web Search Expansion Agent
+
+**Agent run date:** Saturday April 18, 2026 9pm PT (= Sunday April 19, 2026 4am UTC)
+**Scheduled week:** Week 2 (official build date: April 19)
+**Status:** ✅ COMPLETE — All Week 2 code tasks implemented; `tsc --noEmit` exits 0
+
+---
+
+### Summary
+
+Implemented the full **Web Search Expansion Agent** as specified in PLAN.md Week 2. All 7 Week 2 tasks are done.
+
+---
+
+### Week 2 Checklist — Final Status
+
+| Task | Status | Notes |
+|---|---|---|
+| `lib/expander.ts` — Tavily API integration | ✅ Done | `expandWithWeb()` searches Tavily per entity, extracts new entities via Claude, yields events |
+| `app/api/expand/route.ts` — SSE expansion endpoint | ✅ Done | Same SSE pattern as `/api/extract`; falls back to mock data if `TAVILY_API_KEY` not set |
+| "Expand with Web" button in demo UI | ✅ Done | Cyan-accented button appears in header after extraction completes; disabled during processing |
+| Ripple effect for web-sourced nodes | ✅ Done | New web nodes get the existing pulse animation with cyan tint |
+| Source badge: doc nodes vs web-sourced nodes | ✅ Done | Web nodes render with dashed cyan outer ring + semi-transparent fill; legend updated |
+| Step 4 "Web Expansion" added to pipeline | ✅ Done | INITIAL_STEPS now includes `{ id: 'expansion', label: 'Web Expansion', status: 'pending' }` |
+| Expansion log shows web search messages | ✅ Done | "Searching web for: [entity]..." and "+ N new entities found" log as `type: 'web'` (cyan) |
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `lib/types.ts` | Added `source?: 'document' \| 'web'` to `Entity` interface |
+| `lib/expander.ts` | **New file** — `expandWithWeb()`, `searchTavily()`, `extractFromSearchResults()` |
+| `app/api/expand/route.ts` | **New file** — POST SSE endpoint; mock fallback when Tavily unconfigured |
+| `components/demo/knowledge-graph.tsx` | Added `webNodeIds` prop; dashed cyan ring for web nodes; cyan pulse; hover badge; legend updated |
+| `components/demo/knowledge-graph-wrapper.tsx` | Forwarded `webNodeIds` prop |
+| `app/demo/page.tsx` | Added `isExpanding`, `webNodeIds` state; Step 4 in pipeline; "Expand with Web" button; `handleExpandWithWeb()` SSE handler |
+
+---
+
+### Architecture Notes
+
+- **Tavily fallback:** If `TAVILY_API_KEY` is absent, the expand endpoint returns mock-generated web entities so the UI feature is demonstrable without credentials.
+- **Entity deduplication:** `expandWithWeb()` tracks `existingEntityNames` across all expansion iterations to avoid re-adding already-present entities.
+- **Relationship IDs:** Web relationships use a deterministic `web-${focalEntityId}-rel-${offset}-${idx}` scheme consistent with extract route conventions.
+- **Visual language:** Web nodes are visually distinct (dashed cyan ring, semi-transparent fill, cyan label text) from document nodes while still using the same type-based color system.
+
+---
+
+### TypeScript
+
+`tsc --noEmit` exits **0** — no errors.
+
+---
+
+### Definition of Done — Status
+
+> Click "Expand" on a node → graph grows outward in real-time with web-sourced entities.
+
+Implemented: clicking "Expand with Web" → streams new nodes via SSE → nodes appear on graph with pulse animation + dashed cyan badge → log shows "Searching web for..." and "+ N new entities found". ✅
+
+Browser-side verification (live Tavily results, visual animation) requires running `pnpm dev` locally on macOS with `TAVILY_API_KEY` set.
+
+---
+
+### Action Required
+
+Before Week 3 (April 26), please:
+1. Add `TAVILY_API_KEY=...` to `.env.local` (get key at https://tavily.com)
+2. Run `pnpm dev` → upload PDF → click "Expand with Web" → verify graph grows outward
+3. Begin Week 3 prep: Clerk account + Supabase project setup
+
+---
+
+*Next scheduled run: Saturday April 26, 2026 9pm PT*
+

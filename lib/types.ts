@@ -12,6 +12,8 @@ export interface Entity {
   description?: string
   documentId: string
   createdAt?: string
+  /** 'document' = extracted from uploaded file; 'web' = discovered via web search expansion */
+  source?: 'document' | 'web'
 }
 
 export interface Relationship {

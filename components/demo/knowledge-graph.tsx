@@ -18,6 +18,8 @@ interface KnowledgeGraphProps {
   onNodeClick?: (node: Entity) => void
   selectedNodeId?: string | null
   newNodeIds?: Set<string>
+  /** IDs of nodes that arrived via web expansion — shown with dashed ring */
+  webNodeIds?: Set<string>
 }
 
 interface GraphNode extends Entity {
@@ -37,6 +39,7 @@ export function KnowledgeGraph({
   onNodeClick,
   selectedNodeId,
   newNodeIds = new Set(),
+  webNodeIds = new Set(),
 }: KnowledgeGraphProps) {
   const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>(null!)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -99,24 +102,41 @@ export function KnowledgeGraph({
       const isSelected = selectedNodeId === node.id
       const isHovered = hoveredNode?.id === node.id
       const isNew = newNodeIds.has(node.id)
+      const isWeb = webNodeIds.has(node.id) || node.source === 'web'
       const color = getEntityColor(node.type)
 
-      // Pulse ring for new nodes
+      // Pulse ring for new nodes (both doc and web)
       if (isNew) {
         const pulse = (Math.sin(Date.now() / 200) + 1) / 2
         ctx.beginPath()
         ctx.arc(node.x!, node.y!, nodeRadius + 4 + pulse * 6, 0, 2 * Math.PI)
-        ctx.strokeStyle = color
+        ctx.strokeStyle = isWeb ? '#06b6d4' : color  // cyan tint for web nodes
         ctx.lineWidth = 1.5 / globalScale
         ctx.globalAlpha = 0.4 * (1 - pulse * 0.5)
         ctx.stroke()
         ctx.globalAlpha = 1
       }
 
+      // Main node fill — slightly transparent for web nodes
       ctx.beginPath()
       ctx.arc(node.x!, node.y!, nodeRadius, 0, 2 * Math.PI)
       ctx.fillStyle = color
+      ctx.globalAlpha = isWeb ? 0.75 : 1
       ctx.fill()
+      ctx.globalAlpha = 1
+
+      // Web-sourced badge: dashed outer ring in cyan
+      if (isWeb) {
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(node.x!, node.y!, nodeRadius + 3, 0, 2 * Math.PI)
+        ctx.setLineDash([3 / globalScale, 2 / globalScale])
+        ctx.strokeStyle = '#06b6d4'
+        ctx.lineWidth = 1.5 / globalScale
+        ctx.stroke()
+        ctx.setLineDash([])
+        ctx.restore()
+      }
 
       if (isSelected || isHovered) {
         ctx.strokeStyle = '#ffffff'
@@ -124,7 +144,7 @@ export function KnowledgeGraph({
         ctx.stroke()
 
         ctx.beginPath()
-        ctx.arc(node.x!, node.y!, nodeRadius + 4, 0, 2 * Math.PI)
+        ctx.arc(node.x!, node.y!, nodeRadius + (isWeb ? 6 : 4), 0, 2 * Math.PI)
         ctx.strokeStyle = color
         ctx.lineWidth = 2 / globalScale
         ctx.globalAlpha = 0.5
@@ -136,11 +156,11 @@ export function KnowledgeGraph({
         ctx.font = `${fontSize}px Inter, sans-serif`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
-        ctx.fillStyle = '#ffffff'
-        ctx.fillText(label, node.x!, node.y! + nodeRadius + 4)
+        ctx.fillStyle = isWeb ? '#67e8f9' : '#ffffff'  // cyan label for web nodes
+        ctx.fillText(label, node.x!, node.y! + nodeRadius + (isWeb ? 7 : 4))
       }
     },
-    [selectedNodeId, hoveredNode]
+    [selectedNodeId, hoveredNode, newNodeIds, webNodeIds]
   )
 
   const linkCanvasObject = useCallback(
@@ -232,12 +252,12 @@ export function KnowledgeGraph({
         </TooltipProvider>
       </div>
 
-      <div className="absolute bottom-4 left-4 rounded-lg border border-border/50 bg-card/90 p-3 backdrop-blur-sm">
+      <div className="absolute bottom-4 left-4 rounded-lg border border-border/50 bg-card/90 p-3 backdrop-blur-sm max-w-[180px]">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-foreground">
           <Info className="h-3.5 w-3.5" />
-          <span>Entity Types</span>
+          <span>Legend</span>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-2">
           {Object.entries(ENTITY_LABELS).map(([type, label]) => (
             <div key={type} className="flex items-center gap-2">
               <div
@@ -250,6 +270,17 @@ export function KnowledgeGraph({
             </div>
           ))}
         </div>
+        {/* Source badge legend */}
+        <div className="pt-2 border-t border-border/40 space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+            <span className="text-xs text-muted-foreground">Document</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full border border-dashed border-cyan-400 bg-slate-400/50" />
+            <span className="text-xs text-cyan-400">Web expanded</span>
+          </div>
+        </div>
       </div>
 
       {hoveredNode && (
@@ -257,12 +288,17 @@ export function KnowledgeGraph({
           <div className="flex items-center gap-2">
             <div
               className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: ENTITY_COLORS[hoveredNode.type] }}
+              style={{ backgroundColor: getEntityColor(hoveredNode.type) }}
             />
             <span className="font-medium text-foreground">{hoveredNode.name}</span>
+            {hoveredNode.source === 'web' && (
+              <span className="ml-1 rounded px-1 py-0.5 text-[10px] font-medium border border-dashed border-cyan-400 text-cyan-400">
+                web
+              </span>
+            )}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {ENTITY_LABELS[hoveredNode.type]}
+            {hoveredNode.type}
           </p>
           {hoveredNode.description && (
             <p className="mt-2 text-xs text-muted-foreground">
