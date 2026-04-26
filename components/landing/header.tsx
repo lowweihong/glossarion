@@ -40,7 +40,7 @@ export function Header() {
 
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/demo">Sign In</Link>
+            <Link href="/dashboard">Dashboard</Link>
           </Button>
           <Button size="sm" asChild>
             <Link href="/demo">Try Demo</Link>

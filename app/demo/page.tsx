@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { Network, ArrowLeft, Globe } from 'lucide-react'
+import { Network, ArrowLeft, Globe, Save, Check, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UploadZone } from '@/components/demo/upload-zone'
 import { DocumentList } from '@/components/demo/document-list'
@@ -32,6 +32,8 @@ export default function DemoPage() {
   const [logEntries, setLogEntries] = useState<LogEntry[]>([])
   const [entityCount, setEntityCount] = useState(0)
   const [relCount, setRelCount] = useState(0)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedGraphId, setSavedGraphId] = useState<string | null>(null)
 
   const logIdRef = useRef(0)
 
@@ -57,6 +59,7 @@ export default function DemoPage() {
     setEntityCount(0)
     setRelCount(0)
     setWebNodeIds(new Set())
+    setSavedGraphId(null)
 
     for (const file of files) {
       const docId = `doc-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -247,6 +250,31 @@ export default function DemoPage() {
     setIsExpanding(false)
   }, [isExpanding, graphData.nodes, ontology, addLog, updateStep])
 
+  const handleSaveGraph = useCallback(async () => {
+    if (isSaving || graphData.nodes.length === 0) return
+    setIsSaving(true)
+    try {
+      const firstName = documents[0]?.name ?? 'Knowledge Graph'
+      const name = firstName.replace(/\.[^.]+$/, '') + ` (${new Date().toLocaleDateString()})`
+      const res = await fetch('/api/graphs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, nodes: graphData.nodes, links: graphData.links }),
+      })
+      const data = await res.json()
+      if (data.graph?.id) {
+        setSavedGraphId(data.graph.id)
+        addLog(`Graph saved — /graph/${data.graph.id}`, 'complete')
+      } else {
+        addLog(`Save failed: ${data.error ?? 'unknown error'}`, 'error')
+      }
+    } catch {
+      addLog('Save failed — check Supabase configuration', 'error')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [isSaving, graphData, documents, addLog])
+
   const hasGraph = graphData.nodes.length > 0
   const extractionDone = steps.find((s) => s.id === 'extraction')?.status === 'complete'
   const canExpand = hasGraph && extractionDone && !isProcessing && !isExpanding
@@ -270,6 +298,32 @@ export default function DemoPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {savedGraphId && (
+            <Button variant="ghost" size="sm" asChild className="gap-2 text-green-400 hover:text-green-300">
+              <Link href={`/graph/${savedGraphId}`}>
+                <Check className="h-4 w-4" />
+                Saved
+              </Link>
+            </Button>
+          )}
+          {hasGraph && !savedGraphId && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveGraph}
+              disabled={isSaving || isProcessing || isExpanding}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {isSaving ? 'Saving…' : 'Save Graph'}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" asChild className="gap-2 text-muted-foreground">
+            <Link href="/dashboard">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </Button>
           {canExpand && (
             <Button
               variant="outline"
