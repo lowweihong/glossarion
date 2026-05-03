@@ -2,7 +2,7 @@
 
 import { BarChart3, Users, Link2, TrendingUp } from 'lucide-react'
 import type { InsightStats } from '@/lib/types'
-import { ENTITY_COLORS, ENTITY_LABELS, type EntityType } from '@/lib/types'
+import { getEntityColor } from '@/lib/types'
 
 interface InsightsPanelProps {
   insights: InsightStats
@@ -11,7 +11,7 @@ interface InsightsPanelProps {
 export function InsightsPanel({ insights }: InsightsPanelProps) {
   const topTypes = Object.entries(insights.entitiesByType)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 4)
+    .slice(0, 5)
 
   return (
     <div className="space-y-4">
@@ -26,54 +26,33 @@ export function InsightsPanel({ insights }: InsightsPanelProps) {
             <Users className="h-3.5 w-3.5" />
             <span className="text-xs">Entities</span>
           </div>
-          <p className="mt-1 text-xl font-bold text-foreground">
-            {insights.totalEntities}
-          </p>
+          <p className="mt-1 text-xl font-bold text-foreground">{insights.totalEntities}</p>
         </div>
         <div className="rounded-lg bg-secondary/50 p-3">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Link2 className="h-3.5 w-3.5" />
             <span className="text-xs">Relations</span>
           </div>
-          <p className="mt-1 text-xl font-bold text-foreground">
-            {insights.totalRelationships}
-          </p>
+          <p className="mt-1 text-xl font-bold text-foreground">{insights.totalRelationships}</p>
         </div>
       </div>
 
       {topTypes.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">
-            Entity Distribution
-          </p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Entity Distribution</p>
           <div className="space-y-2">
             {topTypes.map(([type, count]) => {
-              const percentage = Math.round(
-                (count / insights.totalEntities) * 100
-              )
+              const color = getEntityColor(type)
+              const percentage = Math.round((count / insights.totalEntities) * 100)
               return (
                 <div key={type} className="flex items-center gap-2">
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{
-                      backgroundColor:
-                        ENTITY_COLORS[type as EntityType] || '#888',
-                    }}
-                  />
-                  <span className="flex-1 text-xs text-muted-foreground">
-                    {ENTITY_LABELS[type as EntityType] || type}
-                  </span>
-                  <span className="text-xs font-medium text-foreground">
-                    {count}
-                  </span>
-                  <div className="h-1.5 w-12 overflow-hidden rounded-full bg-secondary">
+                  <div className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                  <span className="flex-1 text-xs text-muted-foreground truncate">{type}</span>
+                  <span className="text-xs font-medium text-foreground">{count}</span>
+                  <div className="h-1.5 w-12 overflow-hidden rounded-full bg-secondary flex-shrink-0">
                     <div
                       className="h-full rounded-full"
-                      style={{
-                        width: `${percentage}%`,
-                        backgroundColor:
-                          ENTITY_COLORS[type as EntityType] || '#888',
-                      }}
+                      style={{ width: `${percentage}%`, backgroundColor: color }}
                     />
                   </div>
                 </div>
@@ -90,19 +69,19 @@ export function InsightsPanel({ insights }: InsightsPanelProps) {
             Top Connected
           </p>
           <div className="space-y-1.5">
-            {insights.mostConnectedEntities.slice(0, 3).map(({ entity, connectionCount }) => (
+            {insights.mostConnectedEntities.slice(0, 5).map(({ entity, connectionCount }) => (
               <div
                 key={entity.id}
                 className="flex items-center justify-between rounded-md bg-secondary/30 px-2 py-1.5"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: ENTITY_COLORS[entity.type] }}
+                    className="h-2 w-2 flex-shrink-0 rounded-full"
+                    style={{ backgroundColor: getEntityColor(entity.type) }}
                   />
-                  <span className="text-xs text-foreground">{entity.name}</span>
+                  <span className="text-xs text-foreground truncate">{entity.name}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">
+                <span className="ml-2 flex-shrink-0 text-xs text-muted-foreground">
                   {connectionCount} links
                 </span>
               </div>

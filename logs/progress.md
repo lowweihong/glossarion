@@ -466,3 +466,101 @@ Browser-side verification (Supabase save, dashboard load, shareable link) requir
 
 *Next scheduled run: Saturday May 3, 2026 9pm PT (Week 4 — Graph Polish + Advanced Features)*
 
+---
+
+## Run: May 3, 2026 — Week 4 Build: Graph Polish + Advanced Features
+
+**Agent run date:** Saturday May 3, 2026 9pm PT (= Sunday May 4, 2026 4am UTC)
+**Scheduled week:** Week 4 (official build date: May 3)
+**Status:** ✅ COMPLETE — All Week 4 code tasks implemented; `tsc --noEmit` exits 0
+
+---
+
+### Summary
+
+Implemented **Graph Polish + Advanced Features** as specified in PLAN.md Week 4. All code-level tasks are done. `node_modules` were absent from the sandbox at run start; `pnpm install --frozen-lockfile` was run first (6s, no new packages added to package.json). Pushed to main via PAT.
+
+---
+
+### Week 4 Checklist — Final Status
+
+| Task | Status | Notes |
+|---|---|---|
+| Filter graph by entity type (toggle buttons) | ✅ Done | Pill buttons overlaid at top of graph canvas; clicking toggles visibility; links connecting hidden-type nodes also hidden |
+| Search/highlight nodes by name | ✅ Done | Search input in header; matching nodes get yellow glow + amber label; non-matching nodes dimmed to 15% opacity |
+| Multi-document color coding by source doc | ✅ Done | "By Doc" toggle button in header (shown when >1 doc uploaded); per-document colors from 7-color palette; KnowledgeGraph renders node colors from documentColorMap |
+| Export graph as JSON | ✅ Done | FileJson button in graph controls (right side); downloads `knowledge-graph.json` |
+| Export graph as PNG | ✅ Done | Download button in graph controls; grabs canvas via `querySelector('canvas')` and calls `toDataURL('image/png')` |
+| Improve insights panel (top 5 connected) | ✅ Done | InsightsPanel wired into left sidebar when graph has nodes; dynamic `getEntityColor()` for all entity types (replaces hardcoded ENTITY_COLORS); shows top 5 most connected (was 3) |
+| Mobile responsiveness | ✅ Done | Header: menu/back/text elements hidden on mobile with `md:hidden`/`hidden sm:inline`; sidebar hidden by default on mobile with full-screen overlay toggle; entity panel gets `shrink-0`; `overflow-hidden` on main |
+| End-to-end test with 5 diverse PDF types | ⏳ Pending | Requires running `pnpm dev` locally with `AI_API_KEY` and browser — cannot test in sandbox |
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `components/demo/knowledge-graph.tsx` | Added `hiddenTypes`, `searchTerm`, `colorByDocument`, `documentColorMap` props; updated `nodeCanvasObject` for filter/search/doc-color; `linkCanvasObject` skips hidden-type links; Export PNG + Export JSON buttons added to right controls; legend now shows active types dynamically via `getEntityColor` |
+| `components/demo/knowledge-graph-wrapper.tsx` | Forwarded 4 new props: `hiddenTypes`, `searchTerm`, `colorByDocument`, `documentColorMap` |
+| `components/demo/insights-panel.tsx` | Replaced `ENTITY_COLORS[type]` with `getEntityColor(type)` throughout; top connected slice raised from 3 → 5; added `truncate` + `min-w-0` for long entity names |
+| `app/demo/page.tsx` | Added `useMemo`; new state: `hiddenTypes`, `searchTerm`, `colorByDocument`, `sidebarOpen`; computed `documentColorMap`, `entityTypes`, `insights`; `toggleType` handler; search input in header; "By Doc" palette toggle (shown when >1 doc); mobile Menu/X sidebar toggle; entity type filter pill strip overlaid on graph canvas; InsightsPanel integrated into left sidebar; passed all new props to KnowledgeGraphWrapper; mobile-responsive header text/icon visibility |
+
+---
+
+### Architecture Notes
+
+- **Filter**: Handled inside `knowledge-graph.tsx` — hidden nodes return early from `nodeCanvasObject` (invisible but still in physics), hidden-type links skipped in `linkCanvasObject`. Clicks on hidden nodes suppressed in `handleNodeClick`. No re-layout on toggle.
+- **Search**: `searchTerm` propagated from header input → demo page state → KnowledgeGraph prop → `nodeCanvasObject`. Amber glow drawn before node fill; non-matching nodes rendered at 15% alpha.
+- **Export PNG**: `containerRef.current.querySelector('canvas')` → `toDataURL('image/png')` → anchor click. Works because ForceGraph2D renders to a `<canvas>` element.
+- **Export JSON**: `JSON.stringify({ nodes, links }, null, 2)` → Blob → object URL → anchor click.
+- **Insights**: Computed via `useMemo` from `graphData` on every state change. `connectionCounts` built from `graphData.links` (source/target are strings in Relationship interface). Top 5 by connection count.
+- **Multi-doc color**: 7-color palette `DOC_COLORS` maps each `Document.id` → color. When `colorByDocument=true`, KnowledgeGraph uses `documentColorMap.get(node.documentId)` instead of `getEntityColor(node.type)`. Hover tooltip color also updates.
+- **Mobile**: Left sidebar uses conditional classes — hidden on mobile by default; when `sidebarOpen=true`, rendered as `absolute inset-0 z-30 w-full` overlay. Mobile close button (X) inside sidebar top bar. Header buttons use `hidden sm:inline` for text labels.
+
+---
+
+### TypeScript
+
+`pnpm tsc --noEmit` exits **0** — no errors. (`node_modules` installed via `pnpm install --frozen-lockfile` at start of run; no packages added to package.json.)
+
+---
+
+### Definition of Done — Status
+
+> Full flow works reliably. Multiple doc types. Graph is filterable, searchable, exportable.
+
+Implemented:
+- Filter by entity type ✅ — pill toggles, links hide with nodes
+- Search/highlight ✅ — amber glow + dimming
+- Multi-doc color coding ✅ — "By Doc" toggle, per-doc palette
+- Export JSON ✅ — downloads graph data file
+- Export PNG ✅ — downloads canvas screenshot
+- Insights panel ✅ — entity distribution + top 5 connected, wired to live graph state
+- Mobile responsiveness ✅ — sidebar toggle, compact header
+- End-to-end test with 5 PDF types ⏳ — browser-only
+
+---
+
+### Codebase Health
+
+- **TypeScript:** `pnpm tsc --noEmit` exits 0 ✅
+- **Git:** Branch `main`, pushed to main via PAT
+- **New dependencies:** None
+- **Files changed:** 4 source files (all in `components/demo/` and `app/demo/`)
+
+---
+
+### Recommendations (post-Week 4)
+
+1. **Deploy to Vercel** — `vercel --prod` or push triggers auto-deploy if Vercel GitHub integration is active. Set all env vars from `.env.example`.
+2. **Clerk activation** — swap `middleware.ts` pass-through with the Clerk snippet, run `pnpm add @clerk/nextjs`, wrap layout with `<ClerkProvider>`.
+3. **Supabase setup** — create `graphs` table using the SQL schema in `lib/supabase.ts`, then test Save Graph flow.
+4. **End-to-end PDF test** — run locally with real PDFs (legal, academic, news, business, book) and verify the full pipeline: upload → extract → expand → filter → export.
+5. **Node label search on mobile** — the search bar is `hidden sm:flex` on mobile; consider adding it to the sidebar for small screens.
+
+---
+
+*All 4 weeks of PLAN.md are now complete at the code level. The product is shippable pending Vercel deploy + env var configuration.*
+
+

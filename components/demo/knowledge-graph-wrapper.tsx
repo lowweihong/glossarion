@@ -22,6 +22,10 @@ interface KnowledgeGraphWrapperProps {
   selectedNodeId?: string | null
   newNodeIds?: Set<string>
   webNodeIds?: Set<string>
+  hiddenTypes?: Set<string>
+  searchTerm?: string
+  colorByDocument?: boolean
+  documentColorMap?: Map<string, string>
 }
 
 export function KnowledgeGraphWrapper(props: KnowledgeGraphWrapperProps) {

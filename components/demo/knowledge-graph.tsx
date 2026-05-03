@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react'
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d'
-import { ZoomIn, ZoomOut, Maximize2, Info } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize2, Info, Download, FileJson } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -11,15 +11,18 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { GraphData, Entity, Relationship } from '@/lib/types'
-import { ENTITY_COLORS, ENTITY_LABELS, getEntityColor } from '@/lib/types'
+import { getEntityColor } from '@/lib/types'
 
 interface KnowledgeGraphProps {
   data: GraphData
   onNodeClick?: (node: Entity) => void
   selectedNodeId?: string | null
   newNodeIds?: Set<string>
-  /** IDs of nodes that arrived via web expansion — shown with dashed ring */
   webNodeIds?: Set<string>
+  hiddenTypes?: Set<string>
+  searchTerm?: string
+  colorByDocument?: boolean
+  documentColorMap?: Map<string, string>
 }
 
 interface GraphNode extends Entity {
@@ -40,6 +43,10 @@ export function KnowledgeGraph({
   selectedNodeId,
   newNodeIds = new Set(),
   webNodeIds = new Set(),
+  hiddenTypes = new Set(),
+  searchTerm = '',
+  colorByDocument = false,
+  documentColorMap,
 }: KnowledgeGraphProps) {
   const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>(null!)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -55,7 +62,6 @@ export function KnowledgeGraph({
         })
       }
     }
-
     updateDimensions()
     window.addEventListener('resize', updateDimensions)
     return () => window.removeEventListener('resize', updateDimensions)
@@ -63,39 +69,57 @@ export function KnowledgeGraph({
 
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
-      if (onNodeClick) {
-        onNodeClick(node)
-      }
+      if (hiddenTypes.has(node.type)) return
+      if (onNodeClick) onNodeClick(node)
       if (graphRef.current) {
         graphRef.current.centerAt(node.x, node.y, 500)
         graphRef.current.zoom(2, 500)
       }
     },
-    [onNodeClick]
+    [onNodeClick, hiddenTypes]
   )
 
   const handleZoomIn = () => {
-    if (graphRef.current) {
-      const currentZoom = graphRef.current.zoom()
-      graphRef.current.zoom(currentZoom * 1.5, 300)
-    }
+    if (graphRef.current) graphRef.current.zoom(graphRef.current.zoom() * 1.5, 300)
   }
-
   const handleZoomOut = () => {
-    if (graphRef.current) {
-      const currentZoom = graphRef.current.zoom()
-      graphRef.current.zoom(currentZoom / 1.5, 300)
-    }
+    if (graphRef.current) graphRef.current.zoom(graphRef.current.zoom() / 1.5, 300)
+  }
+  const handleFitView = () => {
+    if (graphRef.current) graphRef.current.zoomToFit(400, 50)
   }
 
-  const handleFitView = () => {
-    if (graphRef.current) {
-      graphRef.current.zoomToFit(400, 50)
-    }
+  const handleExportJSON = () => {
+    const blob = new Blob(
+      [JSON.stringify({ nodes: data.nodes, links: data.links }, null, 2)],
+      { type: 'application/json' }
+    )
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'knowledge-graph.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportPNG = () => {
+    const canvas = containerRef.current?.querySelector('canvas')
+    if (!canvas) return
+    const url = canvas.toDataURL('image/png')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'knowledge-graph.png'
+    a.click()
   }
 
   const nodeCanvasObject = useCallback(
     (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      if (hiddenTypes.has(node.type)) return
+
+      const isSearchActive = searchTerm.length > 0
+      const isMatch = isSearchActive && node.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const isDimmed = isSearchActive && !isMatch
+
       const label = node.name
       const fontSize = 12 / globalScale
       const nodeRadius = 8
@@ -103,30 +127,47 @@ export function KnowledgeGraph({
       const isHovered = hoveredNode?.id === node.id
       const isNew = newNodeIds.has(node.id)
       const isWeb = webNodeIds.has(node.id) || node.source === 'web'
-      const color = getEntityColor(node.type)
 
-      // Pulse ring for new nodes (both doc and web)
-      if (isNew) {
+      const color =
+        colorByDocument && documentColorMap?.has(node.documentId)
+          ? documentColorMap.get(node.documentId)!
+          : getEntityColor(node.type)
+
+      // Search match glow
+      if (isMatch) {
+        ctx.beginPath()
+        ctx.arc(node.x!, node.y!, nodeRadius + 8, 0, 2 * Math.PI)
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.12)'
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(node.x!, node.y!, nodeRadius + 4, 0, 2 * Math.PI)
+        ctx.strokeStyle = '#fbbf24'
+        ctx.lineWidth = 2 / globalScale
+        ctx.stroke()
+      }
+
+      // Pulse ring for new nodes
+      if (isNew && !isDimmed) {
         const pulse = (Math.sin(Date.now() / 200) + 1) / 2
         ctx.beginPath()
         ctx.arc(node.x!, node.y!, nodeRadius + 4 + pulse * 6, 0, 2 * Math.PI)
-        ctx.strokeStyle = isWeb ? '#06b6d4' : color  // cyan tint for web nodes
+        ctx.strokeStyle = isWeb ? '#06b6d4' : color
         ctx.lineWidth = 1.5 / globalScale
         ctx.globalAlpha = 0.4 * (1 - pulse * 0.5)
         ctx.stroke()
         ctx.globalAlpha = 1
       }
 
-      // Main node fill — slightly transparent for web nodes
+      // Main node fill
       ctx.beginPath()
       ctx.arc(node.x!, node.y!, nodeRadius, 0, 2 * Math.PI)
       ctx.fillStyle = color
-      ctx.globalAlpha = isWeb ? 0.75 : 1
+      ctx.globalAlpha = isDimmed ? 0.15 : isWeb ? 0.75 : 1
       ctx.fill()
       ctx.globalAlpha = 1
 
-      // Web-sourced badge: dashed outer ring in cyan
-      if (isWeb) {
+      // Web dashed ring
+      if (isWeb && !isDimmed) {
         ctx.save()
         ctx.beginPath()
         ctx.arc(node.x!, node.y!, nodeRadius + 3, 0, 2 * Math.PI)
@@ -138,7 +179,10 @@ export function KnowledgeGraph({
         ctx.restore()
       }
 
-      if (isSelected || isHovered) {
+      // Selection / hover ring
+      if ((isSelected || isHovered) && !isDimmed) {
+        ctx.beginPath()
+        ctx.arc(node.x!, node.y!, nodeRadius, 0, 2 * Math.PI)
         ctx.strokeStyle = '#ffffff'
         ctx.lineWidth = 2 / globalScale
         ctx.stroke()
@@ -152,15 +196,16 @@ export function KnowledgeGraph({
         ctx.globalAlpha = 1
       }
 
-      if (globalScale > 0.8 || isSelected || isHovered) {
+      // Label
+      if (!isDimmed && (globalScale > 0.8 || isSelected || isHovered)) {
         ctx.font = `${fontSize}px Inter, sans-serif`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
-        ctx.fillStyle = isWeb ? '#67e8f9' : '#ffffff'  // cyan label for web nodes
+        ctx.fillStyle = isMatch ? '#fbbf24' : isWeb ? '#67e8f9' : '#ffffff'
         ctx.fillText(label, node.x!, node.y! + nodeRadius + (isWeb ? 7 : 4))
       }
     },
-    [selectedNodeId, hoveredNode, newNodeIds, webNodeIds]
+    [selectedNodeId, hoveredNode, newNodeIds, webNodeIds, hiddenTypes, searchTerm, colorByDocument, documentColorMap]
   )
 
   const linkCanvasObject = useCallback(
@@ -168,6 +213,7 @@ export function KnowledgeGraph({
       const source = link.source as GraphNode
       const target = link.target as GraphNode
       if (!source.x || !source.y || !target.x || !target.y) return
+      if (hiddenTypes.has(source.type) || hiddenTypes.has(target.type)) return
 
       ctx.beginPath()
       ctx.moveTo(source.x, source.y)
@@ -187,19 +233,21 @@ export function KnowledgeGraph({
         ctx.fillText(link.type, midX, midY)
       }
     },
-    []
+    [hiddenTypes]
   )
 
-  const graphData = {
+  const fgData = {
     nodes: data.nodes as GraphNode[],
     links: data.links as GraphLink[],
   }
+
+  const activeTypes = [...new Set(data.nodes.filter((n) => !hiddenTypes.has(n.type)).map((n) => n.type))]
 
   return (
     <div ref={containerRef} className="relative h-full w-full">
       <ForceGraph2D
         ref={graphRef}
-        graphData={graphData}
+        graphData={fgData}
         width={dimensions.width}
         height={dimensions.height}
         backgroundColor="transparent"
@@ -215,12 +263,11 @@ export function KnowledgeGraph({
         d3VelocityDecay={0.3}
         cooldownTicks={100}
         onEngineStop={() => {
-          if (graphRef.current) {
-            graphRef.current.zoomToFit(400, 50)
-          }
+          if (graphRef.current) graphRef.current.zoomToFit(400, 50)
         }}
       />
 
+      {/* Zoom + Export controls */}
       <div className="absolute right-4 top-4 flex flex-col gap-2">
         <TooltipProvider>
           <Tooltip>
@@ -249,28 +296,46 @@ export function KnowledgeGraph({
             </TooltipTrigger>
             <TooltipContent side="left">Fit to View</TooltipContent>
           </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="secondary" size="icon" onClick={handleExportPNG}>
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Export PNG</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="secondary" size="icon" onClick={handleExportJSON}>
+                <FileJson className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Export JSON</TooltipContent>
+          </Tooltip>
         </TooltipProvider>
       </div>
 
+      {/* Legend */}
       <div className="absolute bottom-4 left-4 rounded-lg border border-border/50 bg-card/90 p-3 backdrop-blur-sm max-w-[180px]">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-foreground">
           <Info className="h-3.5 w-3.5" />
           <span>Legend</span>
         </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-2">
-          {Object.entries(ENTITY_LABELS).map(([type, label]) => (
-            <div key={type} className="flex items-center gap-2">
-              <div
-                className="h-2.5 w-2.5 rounded-full"
-                style={{
-                  backgroundColor: ENTITY_COLORS[type as keyof typeof ENTITY_COLORS],
-                }}
-              />
-              <span className="text-xs text-muted-foreground">{label}</span>
-            </div>
-          ))}
-        </div>
-        {/* Source badge legend */}
+        {activeTypes.length > 0 && (
+          <div className="space-y-1.5 mb-2">
+            {activeTypes.slice(0, 8).map((type) => (
+              <div key={type} className="flex items-center gap-2">
+                <div
+                  className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                  style={{ backgroundColor: colorByDocument ? '#888' : getEntityColor(type) }}
+                />
+                <span className="text-xs text-muted-foreground truncate">{type}</span>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="pt-2 border-t border-border/40 space-y-1">
           <div className="flex items-center gap-2">
             <div className="h-2.5 w-2.5 rounded-full bg-slate-400" />
@@ -283,12 +348,18 @@ export function KnowledgeGraph({
         </div>
       </div>
 
-      {hoveredNode && (
+      {/* Hover tooltip */}
+      {hoveredNode && !hiddenTypes.has(hoveredNode.type) && (
         <div className="absolute left-4 top-4 max-w-xs rounded-lg border border-border/50 bg-card/90 p-3 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <div
               className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: getEntityColor(hoveredNode.type) }}
+              style={{
+                backgroundColor:
+                  colorByDocument && documentColorMap?.has(hoveredNode.documentId)
+                    ? documentColorMap.get(hoveredNode.documentId)
+                    : getEntityColor(hoveredNode.type),
+              }}
             />
             <span className="font-medium text-foreground">{hoveredNode.name}</span>
             {hoveredNode.source === 'web' && (
@@ -297,13 +368,9 @@ export function KnowledgeGraph({
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {hoveredNode.type}
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{hoveredNode.type}</p>
           {hoveredNode.description && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {hoveredNode.description}
-            </p>
+            <p className="mt-2 text-xs text-muted-foreground">{hoveredNode.description}</p>
           )}
         </div>
       )}
